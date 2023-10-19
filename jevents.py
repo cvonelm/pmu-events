@@ -736,60 +736,6 @@ int pmu_metrics_table_for_each_metric(const struct pmu_metrics_table *table,
         return 0;
 }
 
-const struct pmu_events_table *perf_pmu__find_events_table(struct perf_pmu *pmu)
-{
-        const struct pmu_events_table *table = NULL;
-        char *cpuid = perf_pmu__getcpuid(pmu);
-        int i;
-
-        /* on some platforms which uses cpus map, cpuid can be NULL for
-         * PMUs other than CORE PMUs.
-         */
-        if (!cpuid)
-                return NULL;
-
-        i = 0;
-        for (;;) {
-                const struct pmu_events_map *map = &pmu_events_map[i++];
-                if (!map->arch)
-                        break;
-
-                if (!strcmp_cpuid_str(map->cpuid, cpuid)) {
-                        table = &map->event_table;
-                        break;
-                }
-        }
-        free(cpuid);
-        return table;
-}
-
-const struct pmu_metrics_table *perf_pmu__find_metrics_table(struct perf_pmu *pmu)
-{
-        const struct pmu_metrics_table *table = NULL;
-        char *cpuid = perf_pmu__getcpuid(pmu);
-        int i;
-
-        /* on some platforms which uses cpus map, cpuid can be NULL for
-         * PMUs other than CORE PMUs.
-         */
-        if (!cpuid)
-                return NULL;
-
-        i = 0;
-        for (;;) {
-                const struct pmu_events_map *map = &pmu_events_map[i++];
-                if (!map->arch)
-                        break;
-
-                if (!strcmp_cpuid_str(map->cpuid, cpuid)) {
-                        table = &map->metric_table;
-                        break;
-                }
-        }
-        free(cpuid);
-        return table;
-}
-
 const struct pmu_events_table *find_core_events_table(const char *arch, const char *cpuid)
 {
         for (const struct pmu_events_map *tables = &pmu_events_map[0];

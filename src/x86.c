@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 /* Full CPUID format for x86 is vendor-family-model-stepping */
 static bool is_full_cpuid(const char* id)
@@ -147,42 +148,4 @@ static int __get_cpuid(char* buffer, size_t sz, const char* fmt)
 int get_cpuid(char* buffer, size_t sz)
 {
     return __get_cpuid(buffer, sz, "%s,%u,%u,%u$");
-}
-
-char* get_cpuid_str(struct perf_pmu* pmu)
-{
-    char* buf = (char*)malloc(128);
-
-    if (buf && __get_cpuid(buf, 128, "%s-%u-%X-%X$") < 0)
-    {
-        free(buf);
-        return NULL;
-    }
-    return buf;
-}
-
-struct compact_pmu_event
-{
-    int offset;
-};
-
-char* perf_pmu__getcpuid(struct perf_pmu* pmu)
-{
-    char* cpuid;
-    static bool printed;
-
-    cpuid = getenv("PERF_CPUID");
-    if (cpuid)
-        cpuid = strdup(cpuid);
-    if (!cpuid)
-        cpuid = get_cpuid_str(pmu);
-    if (!cpuid)
-        return NULL;
-
-    if (!printed)
-    {
-        printf("Using CPUID %s\n", cpuid);
-        printed = 1;
-    }
-    return cpuid;
 }

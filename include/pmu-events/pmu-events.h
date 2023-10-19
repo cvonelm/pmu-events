@@ -6,8 +6,6 @@
 #include <pmu-events/x86.h>
 #endif
 
-struct perf_pmu;
-
 enum aggr_mode_class
 {
     PerChip = 1,
@@ -59,8 +57,6 @@ int pmu_events_table_for_each_event(const struct pmu_events_table* table, pmu_ev
 int pmu_metrics_table_for_each_metric(const struct pmu_metrics_table* table, pmu_metric_iter_fn fn,
                                       void* data);
 
-const struct pmu_events_table* perf_pmu__find_events_table(struct perf_pmu* pmu);
-const struct pmu_metrics_table* perf_pmu__find_metrics_table(struct perf_pmu* pmu);
 const struct pmu_events_table* find_core_events_table(const char* arch, const char* cpuid);
 const struct pmu_metrics_table* find_core_metrics_table(const char* arch, const char* cpuid);
 int pmu_for_each_core_event(pmu_event_iter_fn fn, void* data);
