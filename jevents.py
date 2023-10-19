@@ -924,7 +924,6 @@ such as "arm/cortex-a34".''',
 #include <stddef.h>
 #include <stdlib.h>
 
-int main(void){}
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 struct compact_pmu_event {
