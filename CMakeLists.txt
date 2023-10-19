@@ -9,7 +9,7 @@ target_include_directories(pmu-events SYSTEM INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
-    target_sources(pmu-events PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/x86.c)
+    target_sources(pmu-events INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src/x86.c)
 endif()
 
 execute_process(COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/jevents.py all all ${CMAKE_CURRENT_SOURCE_DIR}/arch ${CMAKE_CURRENT_SOURCE_DIR}/pmu-events.c)
