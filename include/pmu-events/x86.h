@@ -1,4 +1,5 @@
-#include <pmu-events/x86.h>
+#pragma once
+
 #include <stdbool.h>
 #include <stddef.h>
 
