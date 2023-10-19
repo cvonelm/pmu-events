@@ -11,4 +11,4 @@ void get_cpuid_0(char* vendor, unsigned int* lvl);
 
 int get_cpuid(char* buffer, size_t sz);
 
-int get_cpuid_str(struct* perf_pmu);
+int get_cpuid_str(struct perf_pmu* pmu);
