@@ -1,16 +1,20 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(pmu-events VERSION 0.0.1)
+project(pmu-events VERSION 0.1.0)
 
 
-add_library(pmu-events INTERFACE pmu-events.c)
-target_include_directories(pmu-events SYSTEM INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-if(CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
-    target_sources(pmu-events INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src/x86.c)
+execute_process(COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/jevents.py all all ${CMAKE_CURRENT_SOURCE_DIR}/arch ${CMAKE_CURRENT_BINARY_DIR}/pmu-events.c)
+set (SOURCE_FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/pmu-events.c
+    src/helpers.c)
+
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64)
+    list(APPEND SOURCE_FILES src/x86/header.c)
 endif()
 
-execute_process(COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/jevents.py all all ${CMAKE_CURRENT_SOURCE_DIR}/arch ${CMAKE_CURRENT_SOURCE_DIR}/pmu-events.c)
+add_library(pmu-events ${SOURCE_FILES})
+target_include_directories(pmu-events PUBLIC include)
+add_executable(pmu-test examples/main.c)
+target_link_libraries(pmu-test pmu-events)
 
