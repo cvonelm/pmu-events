@@ -1,31 +1,33 @@
-#include <pmu-events/pmu-events.h>
+
 #include <string.h>
+#include <stdbool.h>
 #include <ctype.h>
-/**
-* perf_pmu__match_ignoring_suffix - Does the pmu_name match tok ignoring any
- *                                   trailing suffix? The Suffix must be in form
- *                                   tok_{digits}, or tok{digits}.
- * @pmu_name: The pmu_name with possible suffix.
- * @tok: The possible match to pmu_name without suffix.
- */
-char *perf_pmu__getcpuid(struct perf_pmu *pmu)
+#include <stdlib.h>
+#include <stdio.h>
+#include <pmu-events/pmu-events.h>
+#include <pmu-events/util.h>
+#include <pmu-events/kernel-defs.h>
+
+#define perf_cpu_map__for_each_cpu_skip_any(_cpu, idx, cpus)	\
+	for ((idx) = 0, (_cpu) = cpus->map[idx];	\
+	     (idx) < cpus->nr;			\
+	     (idx)++, (_cpu) = cpus->map[idx])	\
+		if ((_cpu).cpu != -1)
+
+struct perf_cpu perf_cpu_map__min(const struct perf_cpu_map *map)
 {
-	char *cpuid;
-	static bool printed;
+	struct perf_cpu cpu, result = {
+		.cpu = -1
+	};
+	int idx;
 
-	cpuid = getenv("PERF_CPUID");
-	if (cpuid)
-		cpuid = strdup(cpuid);
-	if (!cpuid)
-		cpuid = get_cpuid_str(pmu);
-	if (!cpuid)
-		return NULL;
-
-	if (!printed) {
-		printed = true;
+	perf_cpu_map__for_each_cpu_skip_any(cpu, idx, map) {
+		result = cpu;
+		break;
 	}
-	return cpuid;
+	return result;
 }
+
 static bool perf_pmu__match_ignoring_suffix(const char *pmu_name, const char *tok)
 {
 	const char *p, *suffix;
@@ -59,12 +61,6 @@ static bool perf_pmu__match_ignoring_suffix(const char *pmu_name, const char *to
 	return true;
 }
 
- /* pmu_uncore_alias_match - does name match the PMU name?
- * @pmu_name: the json struct pmu_event name. This may lack a suffix (which
- *            matches) or be of the form "socket,pmuname" which will match
- *            "socketX_pmunameY".
- * @name: a real full PMU name as from sysfs.
- */
 static bool pmu_uncore_alias_match(const char *pmu_name, const char *name)
 {
 	char *tmp = NULL, *tok, *str;
@@ -114,6 +110,7 @@ out:
 	free(str);
 	return res;
 }
+
 bool pmu__name_match(const struct perf_pmu *pmu, const char *pmu_name)
 {
 	return !strcmp(pmu->name, pmu_name) ||
@@ -124,3 +121,24 @@ bool pmu__name_match(const struct perf_pmu *pmu, const char *pmu_name)
 		 */
 	        (pmu->is_core && !strcmp(pmu_name, "default_core"));
 }
+
+char *get_cpuid_allow_env_override(struct perf_cpu cpu)
+{
+	char *cpuid;
+	static bool printed;
+
+	cpuid = getenv("PERF_CPUID");
+	if (cpuid)
+		cpuid = strdup(cpuid);
+	if (!cpuid)
+		cpuid = get_cpuid_str(cpu);
+	if (!cpuid)
+		return NULL;
+
+	if (!printed) {
+		fprintf(stderr, "Using CPUID %s\n", cpuid);
+		printed = true;
+	}
+	return cpuid;
+}
+

@@ -7,10 +7,10 @@ project(pmu-events VERSION 0.1.0)
 execute_process(COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/jevents.py all all ${CMAKE_CURRENT_SOURCE_DIR}/arch ${CMAKE_CURRENT_BINARY_DIR}/pmu-events.c)
 set (SOURCE_FILES
     ${CMAKE_CURRENT_BINARY_DIR}/pmu-events.c
-    src/helpers.c)
+    src/kernel-defs.c)
 
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64)
-    list(APPEND SOURCE_FILES src/x86/header.c)
+    list(APPEND SOURCE_FILES src/x86/util.c)
 endif()
 
 add_library(pmu-events ${SOURCE_FILES})

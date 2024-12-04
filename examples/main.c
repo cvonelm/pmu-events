@@ -1,10 +1,11 @@
 #include <pmu-events/pmu-events.h>
-
+#include <pmu-events/util.h>
 #include <stdio.h>
 
 int main(void)
 {
-    struct pmu_events_table *tbl  = find_core_events_table("x86", get_cpuid_str(NULL));
+    struct perf_cpu cpu = {0};
+    const struct pmu_events_table *tbl  = find_core_events_table("x86", get_cpuid_str(cpu));
     printf("Num events: %d\n", tbl->num_pmus);
     int i = 0;
 

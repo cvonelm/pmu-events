@@ -1,145 +1,54 @@
-/* This file has been imported from the Linux Kernel, which is licensed under the GPL-2.0 */
 /* SPDX-License-Identifier: GPL-2.0 */
 #ifndef PMU_EVENTS_H
 #define PMU_EVENTS_H
 
-#include <stdlib.h>
-#include <stdint.h>
+#include <pmu-events/kernel-defs.h>
 #include <stdbool.h>
-#include <linux/perf_event.h>
+#include <stddef.h>
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+struct compact_pmu_event {
+        int offset;
+};
 
+struct pmu_table_entry {
+        const struct compact_pmu_event *entries;
+        uint32_t num_entries;
+        struct compact_pmu_event pmu_name;
+};
+
+struct pmu_events_table {
+        const struct pmu_table_entry *pmus;
+        uint32_t num_pmus;
+};
+
+/* Struct used to make the PMU metric table implementation opaque to callers. */
+struct pmu_metrics_table {
+        const struct pmu_table_entry *pmus;
+        uint32_t num_pmus;
+};
+
+/*
+ * Map a CPU to its table of PMU events. The CPU is identified by the
+ * cpuid field, which is an arch-specific identifier for the CPU.
+ * The identifier specified in tools/perf/pmu-events/arch/xxx/mapfile
+ * must match the get_cpuid_str() in tools/perf/arch/xxx/util/header.c)
+ *
+ * The  cpuid can contain any character other than the comma.
+ */
+struct pmu_events_map {
+        const char *arch;
+        const char *cpuid;
+        struct pmu_events_table event_table;
+        struct pmu_metrics_table metric_table;
+};
 
 struct perf_pmu;
-int get_cpuid(char *buffer, size_t sz);
 
-char *get_cpuid_str(struct perf_pmu *pmu );
-int strcmp_cpuid_str(const char *s1, const char *s2);
-enum {
-	PERF_PMU_FORMAT_VALUE_CONFIG,
-	PERF_PMU_FORMAT_VALUE_CONFIG1,
-	PERF_PMU_FORMAT_VALUE_CONFIG2,
-	PERF_PMU_FORMAT_VALUE_CONFIG3,
-	PERF_PMU_FORMAT_VALUE_CONFIG_END,
+enum aggr_mode_class {
+	PerChip = 1,
+	PerCore
 };
 
-/**
- * struct perf_pmu
- */
-struct perf_pmu {
-	/** @name: The name of the PMU such as "cpu". */
-	const char *name;
-	/**
-	 * @alias_name: Optional alternate name for the PMU determined in
-	 * architecture specific code.
-	 */
-	char *alias_name;
-	/**
-	 * @id: Optional PMU identifier read from
-	 * <sysfs>/bus/event_source/devices/<name>/identifier.
-	 */
-	const char *id;
-	/**
-	 * @type: Perf event attributed type value, read from
-	 * <sysfs>/bus/event_source/devices/<name>/type.
-	 */
-	uint32_t type;
-	/**
-	 * @selectable: Can the PMU name be selected as if it were an event?
-	 */
-	bool selectable;
-	/**
-	 * @is_core: Is the PMU the core CPU PMU? Determined by the name being
-	 * "cpu" or by the presence of
-	 * <sysfs>/bus/event_source/devices/<name>/cpus. There may be >1 core
-	 * PMU on systems like Intel hybrid.
-	 */
-	bool is_core;
-	/**
-	 * @is_uncore: Is the PMU not within the CPU core? Determined by the
-	 * presence of <sysfs>/bus/event_source/devices/<name>/cpumask.
-	 */
-	bool is_uncore;
-	/**
-	 * @auxtrace: Are events auxiliary events? Determined in architecture
-	 * specific code.
-	 */
-	bool auxtrace;
-	/**
-	 * @formats_checked: Only check PMU's formats are valid for
-	 * perf_event_attr once.
-	 */
-	bool formats_checked;
-	/** @config_masks_present: Are there config format values? */
-	bool config_masks_present;
-	/** @config_masks_computed: Set when masks are lazily computed. */
-	bool config_masks_computed;
-	/**
-	 * @max_precise: Number of levels of :ppp precision supported by the
-	 * PMU, read from
-	 * <sysfs>/bus/event_source/devices/<name>/caps/max_precise.
-	 */
-	int max_precise;
-	/**
-	 * @perf_event_attr_init_default: Optional function to default
-	 * initialize PMU specific parts of the perf_event_attr.
-	 */
-	void (*perf_event_attr_init_default)(const struct perf_pmu *pmu,
-					     struct perf_event_attr *attr);
-	/**
-	 * @cpus: Empty or the contents of either of:
-	 * <sysfs>/bus/event_source/devices/<name>/cpumask.
-	 * <sysfs>/bus/event_source/devices/<cpu>/cpus.
-	 */
-	struct perf_cpu_map *cpus;
-	const struct pmu_events_table *events_table;
-	/** @sysfs_aliases: Number of sysfs aliases loaded. */
-	uint32_t sysfs_aliases;
-	/** @cpu_json_aliases: Number of json event aliases loaded specific to the CPUID. */
-	uint32_t cpu_json_aliases;
-	/** @sys_json_aliases: Number of json event aliases loaded matching the PMU's identifier. */
-	uint32_t sys_json_aliases;
-	/** @sysfs_aliases_loaded: Are sysfs aliases loaded from disk? */
-	bool sysfs_aliases_loaded;
-	/**
-	 * @cpu_aliases_added: Have all json events table entries for the PMU
-	 * been added?
-	 */
-	bool cpu_aliases_added;
-	/** @caps_initialized: Has the list caps been initialized? */
-	bool caps_initialized;
-	/** @nr_caps: The length of the list caps. */
-	uint32_t nr_caps;
-
-	/**
-	 * @config_masks: Derived from the PMU's format data, bits that are
-	 * valid within the config value.
-	 */
-	__u64 config_masks[PERF_PMU_FORMAT_VALUE_CONFIG_END];
-
-	/**
-	 * @missing_features: Features to inhibit when events on this PMU are
-	 * opened.
-	 */
-	struct {
-		/**
-		 * @exclude_guest: Disables perf_event_attr exclude_guest and
-		 * exclude_host.
-		 */
-		bool exclude_guest;
-	} missing_features;
-
-	/**
-	 * @mem_events: List of the supported mem events
-	 */
-	struct perf_mem_event *mem_events;
-};
-enum aggr_mode_class
-{
-    PerChip = 1,
-    PerCore
-};
 /**
  * enum metric_event_groups - How events within a pmu_metric should be grouped.
  */
@@ -163,7 +72,6 @@ enum metric_event_groups {
 	 */
 	MetricNoGroupEventsSmt = 3,
 };
-
 /*
  * Describe each PMU event. Each CPU has a table of PMU events.
  */
@@ -196,53 +104,53 @@ struct pmu_metric {
 	enum metric_event_groups event_grouping;
 };
 
+struct pmu_events_table;
+struct pmu_metrics_table;
 
-struct compact_pmu_event {
-  int offset;
-};
+#define PMU_EVENTS__NOT_FOUND -1000
 
-struct pmu_table_entry {
-        const struct compact_pmu_event *entries;
-        uint32_t num_entries;
-        struct compact_pmu_event pmu_name;
-};
-/* Struct used to make the PMU event table implementation opaque to callers. */
-struct pmu_events_table {
-        const struct pmu_table_entry *pmus;
-        uint32_t num_pmus;
-};
+typedef int (*pmu_event_iter_fn)(const struct pmu_event *pe,
+				 const struct pmu_events_table *table,
+				 void *data);
 
-/* Struct used to make the PMU metric table implementation opaque to callers. */
-struct pmu_metrics_table {
-        const struct pmu_table_entry *pmus;
-        uint32_t num_pmus;
-};
+typedef int (*pmu_metric_iter_fn)(const struct pmu_metric *pm,
+				  const struct pmu_metrics_table *table,
+				  void *data);
 
+int pmu_events_table__for_each_event(const struct pmu_events_table *table,
+				    struct perf_pmu *pmu,
+				    pmu_event_iter_fn fn,
+				    void *data);
+/*
+ * Search for table and entry matching with pmu__name_match. Each matching event
+ * has fn called on it. 0 implies to success/continue the search while non-zero
+ * means to terminate. The special value PMU_EVENTS__NOT_FOUND is used to
+ * indicate no event was found in one of the tables which doesn't terminate the
+ * search of all tables.
+ */
+int pmu_events_table__find_event(const struct pmu_events_table *table,
+                                 struct perf_pmu *pmu,
+                                 const char *name,
+                                 pmu_event_iter_fn fn,
+				 void *data);
+size_t pmu_events_table__num_events(const struct pmu_events_table *table,
+				    struct perf_pmu *pmu);
 
+int pmu_metrics_table__for_each_metric(const struct pmu_metrics_table *table, pmu_metric_iter_fn fn,
+				     void *data);
 
-bool pmu__name_match(const struct perf_pmu *pmu, const char *pmu_name);
-char *perf_pmu__getcpuid(struct perf_pmu *pmu);
-typedef int (*pmu_event_iter_fn)(const struct pmu_event* pe, const struct pmu_events_table* table,
-                                 void* data);
+const struct pmu_events_table *perf_pmu__find_events_table(struct perf_pmu *pmu);
+const struct pmu_metrics_table *pmu_metrics_table__find(void);
+const struct pmu_events_table *find_core_events_table(const char *arch, const char *cpuid);
+const struct pmu_metrics_table *find_core_metrics_table(const char *arch, const char *cpuid);
+int pmu_for_each_core_event(pmu_event_iter_fn fn, void *data);
+int pmu_for_each_core_metric(pmu_metric_iter_fn fn, void *data);
 
-typedef int (*pmu_metric_iter_fn)(const struct pmu_metric* pm,
-                                  const struct pmu_metrics_table* table, void* data);
+const struct pmu_events_table *find_sys_events_table(const char *name);
+const struct pmu_metrics_table *find_sys_metrics_table(const char *name);
+int pmu_for_each_sys_event(pmu_event_iter_fn fn, void *data);
+int pmu_for_each_sys_metric(pmu_metric_iter_fn fn, void *data);
 
-int pmu_events_table_for_each_event(const struct pmu_events_table* table, pmu_event_iter_fn fn,
-                                    void* data);
-int pmu_metrics_table_for_each_metric(const struct pmu_metrics_table* table, pmu_metric_iter_fn fn,
-                                      void* data);
-
-const struct pmu_events_table* find_core_events_table(const char* arch, const char* cpuid);
-const struct pmu_metrics_table* find_core_metrics_table(const char* arch, const char* cpuid);
-int pmu_for_each_core_event(pmu_event_iter_fn fn, void* data);
-int pmu_for_each_core_metric(pmu_metric_iter_fn fn, void* data);
-
-const struct pmu_events_table* find_sys_events_table(const char* name);
-const struct pmu_metrics_table* find_sys_metrics_table(const char* name);
-int pmu_for_each_sys_event(pmu_event_iter_fn fn, void* data);
-int pmu_for_each_sys_metric(pmu_metric_iter_fn fn, void* data);
-
-
+const char *describe_metricgroup(const char *group);
 void decompress_event(int offset, struct pmu_event *pe);
 #endif

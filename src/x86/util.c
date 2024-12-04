@@ -1,15 +1,15 @@
-// SPDX-License-Identifier: GPL-2.0
-#include <sys/types.h>
-#include <errno.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <pmu-events/util.h>
 #include <regex.h>
+#include <stdio.h>
 #include <stdbool.h>
-
-#include <pmu-events/pmu-events.h>
-
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+/*
+ * Generic CPUID function
+ * clear %ecx since some cpus (Cyrix MII) do not set or clear %ecx
+ * resulting in stale register contents being returned.
+ */
 static inline void
 cpuid(unsigned int op, unsigned int op2, unsigned int *a, unsigned int *b,
 	unsigned int *c, unsigned int *d)
@@ -35,6 +35,7 @@ cpuid(unsigned int op, unsigned int op2, unsigned int *a, unsigned int *b,
 		: "=a"(*a), "=D"(*b), "=c"(*c), "=d"(*d)
 		: "a"(op), "2"(op2));
 }
+
 void get_cpuid_0(char *vendor, unsigned int *lvl)
 {
 	unsigned int b, c, d;
@@ -80,15 +81,7 @@ __get_cpuid(char *buffer, size_t sz, const char *fmt)
 	}
 	return ENOBUFS;
 }
-
-int
-get_cpuid(char *buffer, size_t sz)
-{
-	return __get_cpuid(buffer, sz, "%s,%u,%u,%u$");
-}
-
-char *
-get_cpuid_str(struct perf_pmu *pmu )
+char *get_cpuid_str(struct perf_cpu cpu)
 {
 	char *buf = malloc(128);
 
@@ -115,6 +108,8 @@ static bool is_full_cpuid(const char *id)
 
 	return false;
 }
+
+
 
 int strcmp_cpuid_str(const char *mapcpuid, const char *id)
 {

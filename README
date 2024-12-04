@@ -2,6 +2,14 @@
 
 pmu-events from linux/tools/perf modified for use outside of perf
 
+The files include/pmu-events/kernel-defs.h and src/kernel-defs.c contain code lifted from elsewhere
+in the kernel to make it work.
+
+The files include/pmu-events/util.h and src/$ARCH/util.c contain architecture specific functions.
+
+The arch/ directory, include/pmu-events/pmu-events.h and jevents.py are lifted from the pmu-events directory. If possible (to ease updates, modifications should be done elsewhere.
+
+example/ contains an example for using this API.
 
 The contents of this directory allow users to specify PMU events in their
 CPUs by their symbolic names rather than raw event codes (see example below).
